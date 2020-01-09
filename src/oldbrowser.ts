@@ -1,0 +1,13 @@
+import 'core-js/features/symbol';
+import 'core-js/features/object/values';
+import 'core-js/features/object/assign';
+import 'core-js/features/object/entries';
+import 'core-js/features/array/from'; 
+import 'core-js/features/array/flat';
+import 'core-js/features/math/trunc';
+import "core-js/features/set";
+import 'core-js/features/string/starts-with';
+import 'core-js/features/string/ends-with';
+import 'core-js/features/string/includes';
+import 'core-js/features/array/includes';
+import 'core-js/features/reflect/set-prototype-of';
