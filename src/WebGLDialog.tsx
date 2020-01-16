@@ -21,6 +21,4 @@ const WebGLDialog: React.FunctionComponent<{ glAcknowledged: boolean; onClose: (
     </Dialog>
 }
 
-
-import(/* webpackPrefetch: true */ './PixiCanvas');
 export default WebGLDialog;

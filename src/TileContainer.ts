@@ -96,9 +96,9 @@ export default class TileContainer extends PIXI.Container {
         this.people.forEach(person => {
             person.width = this.tileSize / 20;
             person.scale.y = person.scale.x;
-            const pos = getRandomArbitrary(0.5, 0.7);
+            const pos = getRandomArbitrary(0.5, 0.9);
             person.x = pos * this.tileSize;
-            person.y = (1.5-pos)*this.tileSize;
+            person.y = (1-((pos-0.5)*0.55))*this.tileSize;
         });
     }
     repositionTiles() {

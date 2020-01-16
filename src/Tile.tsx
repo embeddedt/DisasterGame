@@ -120,10 +120,14 @@ export class Tile implements TileInterface {
     elevation: TileDirectionBasedValue<number>;
     building: Building;
     riskLevel: number;
-    _ground: TileGroundType;
+    private _ground: TileGroundType;
     groundDate: number;
     population: number;
+    leftColor: number;
+    rightColor: number;
     dead: number;
+    explosionOverride: TileGroundType;
+    cachedProximityFromWater: number;
     set ground(newGround: TileGroundType) {
         this._ground = newGround;
         this.groundDate = Date.now();
@@ -143,6 +147,11 @@ export class Tile implements TileInterface {
     }
     doTileUpdate(): boolean {
         if((Date.now()-this.groundDate) >= getRandomInt(TILE_GROUND_UPDATE_SPEED-2000, TILE_GROUND_UPDATE_SPEED+2000)) {
+            if(this.explosionOverride != null) {
+                this.ground = this.explosionOverride;
+                this.explosionOverride = null;
+                return true;
+            }
             if(this.ground == TileGroundType.Dirt1) {
                 this.ground = TileGroundType.Dirt2;
                 return true;
@@ -198,6 +207,7 @@ export class Tile implements TileInterface {
         this.ground = TileGroundType.Grass;
         this.population = 0;
         this.dead = 0;
+        this.cachedProximityFromWater = null;
         /* Override as necessary */
         if(typeof template == 'object' && template != null) {
             let oldTileMap = undefined;

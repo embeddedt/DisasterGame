@@ -20,8 +20,6 @@ export async function createTsunamiMap(): Promise<TileMap> {
                 rowElevation = Math.max(rowElevation - (column)*0.1, 0);
                 t.setAllElevations(rowElevation+variation);
             }
-            
-            genBuildings(t);
             yield t;
         }
         for(var i = 0; i < 64*16; i++) {
@@ -43,7 +41,6 @@ export async function createTsunamiMap(): Promise<TileMap> {
                 var rowRequestedElevation = 6.25;
                 var columnRequestedElevation = (coastIndex*0.2);
                 t.setAllElevations(Math.min(rowRequestedElevation, columnRequestedElevation)+variation);
-                genBuildings(t);
             }
     
             yield t;
@@ -53,17 +50,23 @@ export async function createTsunamiMap(): Promise<TileMap> {
     var tileStream = tsunamiGen();
     await scheduleIdleWorkLoop(64*32, () => {
         arr.push(tileStream.next().value);
-    });
+    }, 16);
     console.log(arr);
     const testTileMap: TileMap = new TileMap(arr, 64);
     await scheduleIdleWorkLoop(64*32, (i) => {
         const tile = testTileMap[i];
         const prox = calcProximityFromWater(tile);
+        tile.cachedProximityFromWater = prox;
         tile.riskLevel = Math.max(1, MAX_PROXIMITY_SEARCH_DISTANCE - prox) + Math.max(0, (3-Math.round(tile.getHighestElevation())));
         tile.riskLevel = Math.min(tile.riskLevel, MAX_PROXIMITY_SEARCH_DISTANCE);
         if(prox < 3 && tile.ground != TileGroundType.Water) {
             tile.ground = TileGroundType.Sand;
         }
+    });
+    await scheduleIdleWorkLoop(64*32, (i) => {
+        const tile = testTileMap[i];
+        if(tile.ground != TileGroundType.Water)
+            genBuildings(tile);
     });
     return testTileMap;   
 }

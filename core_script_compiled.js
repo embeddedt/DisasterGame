@@ -51289,14 +51289,14 @@ function buildingFactory(directory, buildingId, name, occupancy, destroyedId, ba
     };
 }
 var buildings = [
-    buildingFactory('1421-1425', 5, "Penthouse apartment", 100, 2),
+    buildingFactory('5000', 3, "Heliport", 250, 2, null, "Heliports allow you to evacuate people from one area to another. This can be used to get people away from danger."),
+    buildingFactory('1421-1425', 5, "Penthouse apartment", 100, 2, undefined, "Tall apartments hold a lot of people, but they are at greater risk of collapsing under extreme conditions."),
     buildingFactory('1426-1429', 4, "Brick apartment", 100),
-    buildingFactory('1430-1433', 4, "Large house", 10),
-    buildingFactory('1434-1437', 4, "Church", 200, undefined, undefined, "description"),
+    buildingFactory('1430-1433', 4, "Large house", 10, undefined, undefined, "Private houses are weak and don't hold many people. They are not the best choice for new designs."),
+    buildingFactory('1434-1437', 4, "Church", 200, undefined, undefined, "Churches can house a lot of people effectively."),
     buildingFactory('1440-1443', 8, "Corporate office", 250),
-    buildingFactory('1458-1460', 5, "Hospital", 170),
-    buildingFactory('1487-1488', 2, "Small house", 6),
-    buildingFactory('5000', 3, "Heliport", 250, 2, null)
+    buildingFactory('1458-1460', 5, "Hospital", 170, undefined, undefined, "Hospitals can hold quite a few people and are often well-equipped to hndle disasters."),
+    buildingFactory('1487-1488', 2, "Small house", 6, undefined, undefined, "Private houses are weak and don't hold many people. They are not the best choice for new designs.")
 ];
 function treeFactory(directory) {
     return { mainSprite: "sprites/trees_temperate/" + directory + "/256_0004.png", residents: 0, hidden: true, destroyedSprite: "sprites/trees_temperate/" + directory + "/256_0007.png", occupancy: 0, name: "Tree", destroyed: false };
@@ -51352,27 +51352,41 @@ var disasters = (_a = {},
 
 "use strict";
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return genBuildings; });
-/* harmony import */ var _utilities__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("./src/utilities.tsx");
-/* harmony import */ var _Building__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__("./src/Building.ts");
+/* harmony import */ var _Tile__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("./src/Tile.tsx");
+/* harmony import */ var _utilities__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__("./src/utilities.tsx");
+/* harmony import */ var _Building__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__("./src/Building.ts");
+
 
 
 function genBuildings(t) {
-    var chances = Object(_utilities__WEBPACK_IMPORTED_MODULE_0__[/* getRandomInt */ "f"])(0, 32);
+    var chances = Object(_utilities__WEBPACK_IMPORTED_MODULE_1__[/* getRandomInt */ "f"])(0, 32);
     var skipUnhoused = false;
     if (chances >= 16) {
-        t.building = JSON.parse(JSON.stringify(Object(_utilities__WEBPACK_IMPORTED_MODULE_0__[/* getRandomArrayMember */ "e"])(_Building__WEBPACK_IMPORTED_MODULE_1__[/* trees */ "b"])));
+        t.building = JSON.parse(JSON.stringify(Object(_utilities__WEBPACK_IMPORTED_MODULE_1__[/* getRandomArrayMember */ "e"])(_Building__WEBPACK_IMPORTED_MODULE_2__[/* trees */ "b"])));
         if (chances >= 24)
             skipUnhoused = true;
     }
     else if (chances == 1) {
-        t.building = JSON.parse(JSON.stringify(Object(_utilities__WEBPACK_IMPORTED_MODULE_0__[/* getRandomArrayMember */ "e"])(_Building__WEBPACK_IMPORTED_MODULE_1__[/* buildings */ "a"])));
+        t.population = 0;
+        t.building = JSON.parse(JSON.stringify(Object(_utilities__WEBPACK_IMPORTED_MODULE_1__[/* getRandomArrayMember */ "e"])(_Building__WEBPACK_IMPORTED_MODULE_2__[/* buildings */ "a"], 1)));
         t.building.residents = t.building.occupancy;
         skipUnhoused = true;
     }
-    if (chances >= 8 && chances < 16)
+    if (chances < 16)
         skipUnhoused = true;
     if (!skipUnhoused) {
-        t.population = Object(_utilities__WEBPACK_IMPORTED_MODULE_0__[/* getRandomInt */ "f"])(10, 20);
+        if (Object(_utilities__WEBPACK_IMPORTED_MODULE_1__[/* getRandomInt */ "f"])(1, 10) == 1) {
+            t.population = Object(_utilities__WEBPACK_IMPORTED_MODULE_1__[/* getRandomInt */ "f"])(2, 4);
+            var tilemap_1 = t.getTileMap();
+            t.searchInRing(3).flat(2).forEach(function (n) {
+                if (!Object(_Tile__WEBPACK_IMPORTED_MODULE_0__[/* isGroundType */ "i"])(tilemap_1[n].ground, _Tile__WEBPACK_IMPORTED_MODULE_0__[/* TileGroundType */ "e"].Water)) {
+                    /* People like beaches */
+                    var beachFactor = 1;
+                    beachFactor += Math.round((_Tile__WEBPACK_IMPORTED_MODULE_0__[/* MAX_PROXIMITY_SEARCH_DISTANCE */ "b"] - tilemap_1[n].cachedProximityFromWater) / 3);
+                    tilemap_1[n].population += beachFactor;
+                }
+            });
+        }
     }
 }
 
@@ -51385,48 +51399,15 @@ function genBuildings(t) {
 "use strict";
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("./node_modules/react/index.js");
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _TailSpin__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__("./src/TailSpin.tsx");
-
 
 var MapLoadingScreen = function (props) {
     var loadingText = props.loadingText;
     if (typeof loadingText == 'undefined')
         loadingText = "The map is loading, please wait...";
     return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", { className: "map-loading-screen" },
-        react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_TailSpin__WEBPACK_IMPORTED_MODULE_1__[/* default */ "a"], { dim: 60 }),
-        react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("p", null),
         react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", { className: "loading-text" }, loadingText));
 };
 /* harmony default export */ __webpack_exports__["a"] = (MapLoadingScreen);
-
-
-/***/ }),
-
-/***/ "./src/TailSpin.tsx":
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var tslib__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__("./node_modules/tslib/tslib.es6.js");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__("./node_modules/react/index.js");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
-
-
-var TailSpin = function (p) {
-    var className = p.className, props = Object(tslib__WEBPACK_IMPORTED_MODULE_0__[/* __rest */ "f"])(p, ["className"]);
-    var dim = typeof props.dim == 'undefined' ? 38 : props.dim;
-    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("svg", { width: dim, height: dim, viewBox: "0 0 38 38", className: "svg-loaders-svg" + (className ? " " + className : '') },
-        react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("defs", null,
-            react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("linearGradient", { x1: "8.042%", y1: "0%", x2: "65.682%", y2: "23.865%", id: "prefix__a" },
-                react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("stop", { stopColor: "#fff", stopOpacity: 0, offset: "0%" }),
-                react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("stop", { stopColor: "#fff", stopOpacity: 0.631, offset: "63.146%" }),
-                react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("stop", { stopColor: "#fff", offset: "100%" }))),
-        react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("g", { transform: "translate(1 1)", fill: "none", fillRule: "evenodd" },
-            react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("path", { d: "M36 18c0-9.94-8.06-18-18-18", stroke: "#1875e5", strokeWidth: 2 },
-                react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("animateTransform", { attributeName: "transform", type: "rotate", from: "0 18 18", to: "360 18 18", dur: "0.9s", repeatCount: "indefinite" })),
-            react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("circle", { fill: "#1875e5", cx: 36, cy: 18, r: 1 },
-                react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("animateTransform", { attributeName: "transform", type: "rotate", from: "0 18 18", to: "360 18 18", dur: "0.9s", repeatCount: "indefinite" }))));
-};
-/* harmony default export */ __webpack_exports__["a"] = (TailSpin);
 
 
 /***/ }),
@@ -51560,6 +51541,7 @@ var Tile = /** @class */ (function () {
         this.ground = TileGroundType.Grass;
         this.population = 0;
         this.dead = 0;
+        this.cachedProximityFromWater = null;
         /* Override as necessary */
         if (typeof template == 'object' && template != null) {
             var oldTileMap = undefined;
@@ -51604,6 +51586,11 @@ var Tile = /** @class */ (function () {
     };
     Tile.prototype.doTileUpdate = function () {
         if ((Date.now() - this.groundDate) >= Object(_utilities__WEBPACK_IMPORTED_MODULE_2__[/* getRandomInt */ "f"])(TILE_GROUND_UPDATE_SPEED - 2000, TILE_GROUND_UPDATE_SPEED + 2000)) {
+            if (this.explosionOverride != null) {
+                this.ground = this.explosionOverride;
+                this.explosionOverride = null;
+                return true;
+            }
             if (this.ground == TileGroundType.Dirt1) {
                 this.ground = TileGroundType.Dirt2;
                 return true;
@@ -51922,7 +51909,6 @@ function createTsunamiMap() {
                             rowElevation = Math.max(rowElevation - (column) * 0.1, 0);
                             t.setAllElevations(rowElevation + variation);
                         }
-                        Object(_GeneratorUtilities__WEBPACK_IMPORTED_MODULE_1__[/* genBuildings */ "a"])(t);
                         return [4 /*yield*/, t];
                     case 2:
                         _a.sent();
@@ -51952,7 +51938,6 @@ function createTsunamiMap() {
                             rowRequestedElevation = 6.25;
                             columnRequestedElevation = (coastIndex * 0.2);
                             t.setAllElevations(Math.min(rowRequestedElevation, columnRequestedElevation) + variation);
-                            Object(_GeneratorUtilities__WEBPACK_IMPORTED_MODULE_1__[/* genBuildings */ "a"])(t);
                         }
                         return [4 /*yield*/, t];
                     case 6:
@@ -51973,7 +51958,7 @@ function createTsunamiMap() {
                     tileStream = tsunamiGen();
                     return [4 /*yield*/, Object(_utilities__WEBPACK_IMPORTED_MODULE_3__[/* scheduleIdleWorkLoop */ "l"])(64 * 32, function () {
                             arr.push(tileStream.next().value);
-                        })];
+                        }, 16)];
                 case 1:
                     _a.sent();
                     console.log(arr);
@@ -51981,6 +51966,7 @@ function createTsunamiMap() {
                     return [4 /*yield*/, Object(_utilities__WEBPACK_IMPORTED_MODULE_3__[/* scheduleIdleWorkLoop */ "l"])(64 * 32, function (i) {
                             var tile = testTileMap[i];
                             var prox = Object(_Tile__WEBPACK_IMPORTED_MODULE_2__[/* calcProximityFromWater */ "h"])(tile);
+                            tile.cachedProximityFromWater = prox;
                             tile.riskLevel = Math.max(1, _Tile__WEBPACK_IMPORTED_MODULE_2__[/* MAX_PROXIMITY_SEARCH_DISTANCE */ "b"] - prox) + Math.max(0, (3 - Math.round(tile.getHighestElevation())));
                             tile.riskLevel = Math.min(tile.riskLevel, _Tile__WEBPACK_IMPORTED_MODULE_2__[/* MAX_PROXIMITY_SEARCH_DISTANCE */ "b"]);
                             if (prox < 3 && tile.ground != _Tile__WEBPACK_IMPORTED_MODULE_2__[/* TileGroundType */ "e"].Water) {
@@ -51988,6 +51974,13 @@ function createTsunamiMap() {
                             }
                         })];
                 case 2:
+                    _a.sent();
+                    return [4 /*yield*/, Object(_utilities__WEBPACK_IMPORTED_MODULE_3__[/* scheduleIdleWorkLoop */ "l"])(64 * 32, function (i) {
+                            var tile = testTileMap[i];
+                            if (tile.ground != _Tile__WEBPACK_IMPORTED_MODULE_2__[/* TileGroundType */ "e"].Water)
+                                Object(_GeneratorUtilities__WEBPACK_IMPORTED_MODULE_1__[/* genBuildings */ "a"])(tile);
+                        })];
+                case 3:
                     _a.sent();
                     return [2 /*return*/, testTileMap];
             }
@@ -52077,15 +52070,14 @@ __webpack_require__.r(__webpack_exports__);
 
 var PIXIContainer = react__WEBPACK_IMPORTED_MODULE_3___default.a.lazy(function () {
     try {
-        return Promise.all(/* import() */[__webpack_require__.e(0), __webpack_require__.e(1), __webpack_require__.e(2), __webpack_require__.e(3), __webpack_require__.e(6)]).then(__webpack_require__.bind(null, "./src/PIXIContainer.tsx"));
+        return Promise.all(/* import() */[__webpack_require__.e(0), __webpack_require__.e(1), __webpack_require__.e(2), __webpack_require__.e(5)]).then(__webpack_require__.bind(null, "./src/PIXIContainer.tsx"));
     }
     catch (e) {
         console.error(e);
     }
 });
-var WebGLDialog = react__WEBPACK_IMPORTED_MODULE_3___default.a.lazy(function () { return Promise.all(/* import() */[__webpack_require__.e(0), __webpack_require__.e(3), __webpack_require__.e(10)]).then(__webpack_require__.bind(null, "./src/WebGLDialog.tsx")); });
-var MapChooser = react__WEBPACK_IMPORTED_MODULE_3___default.a.lazy(function () { return Promise.all(/* import() */[__webpack_require__.e(0), __webpack_require__.e(3), __webpack_require__.e(9)]).then(__webpack_require__.bind(null, "./src/MapChooser.tsx")); });
-var SnackbarProvider = react__WEBPACK_IMPORTED_MODULE_3___default.a.lazy(function () { return Promise.all(/* import() */[__webpack_require__.e(0), __webpack_require__.e(2), __webpack_require__.e(12)]).then(__webpack_require__.bind(null, "./src/SnackbarProvider.ts")); });
+var WebGLDialog = react__WEBPACK_IMPORTED_MODULE_3___default.a.lazy(function () { return Promise.all(/* import() */[__webpack_require__.e(0), __webpack_require__.e(4)]).then(__webpack_require__.bind(null, "./src/WebGLDialog.tsx")); });
+var MapChooser = react__WEBPACK_IMPORTED_MODULE_3___default.a.lazy(function () { return Promise.all(/* import() */[__webpack_require__.e(0), __webpack_require__.e(3)]).then(__webpack_require__.bind(null, "./src/MapChooser.tsx")); });
 var windowPromise = new Promise(function (resolve) { return window.addEventListener("load", resolve); });
 windowPromise.then(function () {
     return Object(tslib__WEBPACK_IMPORTED_MODULE_0__[/* __awaiter */ "b"])(this, void 0, void 0, function () {
@@ -52093,7 +52085,7 @@ windowPromise.then(function () {
             var _a = Object(tslib__WEBPACK_IMPORTED_MODULE_0__[/* __read */ "e"])(react__WEBPACK_IMPORTED_MODULE_3___default.a.useState(null), 2), chosenMap = _a[0], setChosenMap = _a[1];
             var _b = Object(tslib__WEBPACK_IMPORTED_MODULE_0__[/* __read */ "e"])(react__WEBPACK_IMPORTED_MODULE_3___default.a.useState(false), 2), generatingMap = _b[0], setGeneratingMap = _b[1];
             var _c = Object(tslib__WEBPACK_IMPORTED_MODULE_0__[/* __read */ "e"])(react__WEBPACK_IMPORTED_MODULE_3___default.a.useState(webGLSupport), 2), glAcknowledge = _c[0], setGLAcknowledge = _c[1];
-            var _d = Object(tslib__WEBPACK_IMPORTED_MODULE_0__[/* __read */ "e"])(react__WEBPACK_IMPORTED_MODULE_3___default.a.useState(webGLSupport), 2), canvasLoaded = _d[0], setCanvasLoaded = _d[1];
+            var _d = Object(tslib__WEBPACK_IMPORTED_MODULE_0__[/* __read */ "e"])(react__WEBPACK_IMPORTED_MODULE_3___default.a.useState(true), 2), canvasLoaded = _d[0], setCanvasLoaded = _d[1];
             var onMapChosen = react__WEBPACK_IMPORTED_MODULE_3___default.a.useCallback(function (mapGen) {
                 setGeneratingMap(true);
                 var p = mapGen();
@@ -52114,10 +52106,6 @@ windowPromise.then(function () {
             var onGlAcknowledge = react__WEBPACK_IMPORTED_MODULE_3___default.a.useCallback(function () {
                 /* Load PIXI Canvas support */
                 setGLAcknowledge(true);
-                Promise.all(/* import() */[__webpack_require__.e(1), __webpack_require__.e(4), __webpack_require__.e(5)]).then(__webpack_require__.bind(null, "./src/PixiCanvas.ts")).then(function () {
-                    console.log("Loaded canvas");
-                    setCanvasLoaded(true);
-                });
             }, []);
             var renderSystemOK = webGLSupport || (glAcknowledge && canvasLoaded);
             return react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", { className: "canvas-container" },
@@ -52125,8 +52113,7 @@ windowPromise.then(function () {
                     react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_3__["Suspense"], { fallback: react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(_MapLoadingScreen__WEBPACK_IMPORTED_MODULE_6__[/* default */ "a"], { loadingText: (generatingMap || chosenMap != null) ? "Generating map..." : "Loading..." }) },
                         renderSystemOK && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(MapChooser, { show: chosenMap == null, onMapChosen: onMapChosen, availableMaps: tilemaps }),
                         (generatingMap || (glAcknowledge && !canvasLoaded)) && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(_AlwaysSuspended__WEBPACK_IMPORTED_MODULE_8__[/* default */ "a"], null),
-                        (renderSystemOK && chosenMap != null) && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(SnackbarProvider, null,
-                            react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(PIXIContainer, { onGoBack: goBack, tileMap: chosenMap })),
+                        (renderSystemOK && chosenMap != null) && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(PIXIContainer, { onGoBack: goBack, tileMap: chosenMap }),
                         !webGLSupport && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(WebGLDialog, { glAcknowledged: glAcknowledge, onClose: onGlAcknowledge }))));
         }
         var webGLSupport, tilemaps, testmap;
@@ -52207,13 +52194,21 @@ function pad(n, width, z) {
     n = n + '';
     return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
 }
-var _debounce = function (ms, fn) {
-    var timer;
+var _debounce = function (wait, func, immediate) {
+    if (immediate === void 0) { immediate = false; }
+    var timeout;
     return function () {
-        clearTimeout(timer);
-        var args = Array.prototype.slice.call(arguments);
-        args.unshift(this);
-        timer = setTimeout(fn.bind.apply(fn, args), ms);
+        var context = this, args = arguments;
+        var later = function () {
+            timeout = null;
+            if (!immediate)
+                func.apply(context, args);
+        };
+        var callNow = immediate && !timeout;
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+        if (callNow)
+            func.apply(context, args);
     };
 };
 
@@ -52461,35 +52456,49 @@ var deepDiffMapper = function () {
     };
 }();
 
-function scheduleIdleWorkLoop(numEntries, cb) {
-    return new Promise(function (resolve, reject) {
-        var i = 0;
-        var triggerMoreWork = function () { return window.requestIdleCallback(function (info) {
-            try {
-                while (info.timeRemaining() > 0 && i < numEntries) {
-                    cb(i);
-                    i++;
+function scheduleIdleWorkLoop(numEntries, cb, timeout) {
+    var _this = this;
+    return new Promise(function (resolve, reject) { return Object(tslib__WEBPACK_IMPORTED_MODULE_0__[/* __awaiter */ "b"])(_this, void 0, void 0, function () {
+        var i, i;
+        return Object(tslib__WEBPACK_IMPORTED_MODULE_0__[/* __generator */ "d"])(this, function (_a) {
+            i = 0;
+            /*
+            const triggerMoreWork = () => (window as any).requestIdleCallback(info => {
+                try {
+                    while(info.timeRemaining() > 0 && i < numEntries) {
+                        cb(i);
+                        i++;
+                    }
+                    if(i < numEntries)
+                        triggerMoreWork();
+                    else {
+                        resolve();
+                    }
+                } catch(e) {
+                    reject(e);
                 }
-                if (i < numEntries)
-                    triggerMoreWork();
-                else {
-                    resolve();
-                }
+            }, { timeout: timeout });
+            
+            triggerMoreWork();
+            */
+            for (i = 0; i < numEntries; i++) {
+                cb(i);
             }
-            catch (e) {
-                reject(e);
-            }
-        }); };
-        triggerMoreWork();
-    });
+            resolve();
+            return [2 /*return*/];
+        });
+    }); });
 }
 function getRandomInt(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min)) + min; //The maximum is exclusive and the minimum is inclusive
 }
-function getRandomArrayMember(arr) {
-    return arr[getRandomInt(0, arr.length)];
+function getRandomArrayMember(arr, startIdx) {
+    if (startIdx === void 0) { startIdx = 0; }
+    if (startIdx >= arr.length)
+        throw new Error("Start index must be less than array length.");
+    return arr[getRandomInt(startIdx, arr.length)];
 }
 function stringTillFirstDigit(s) {
     if (s == undefined)

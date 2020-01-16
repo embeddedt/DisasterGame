@@ -1,5 +1,7 @@
 
 
+
+
 /* ---- default pixi ---- */
 
 const VERSION = '5.2.0';
@@ -23,6 +25,19 @@ export * from '@pixi/interaction';
 export * from '@pixi/sprite-animated';
 import * as interaction from '@pixi/interaction';
 export { interaction };
+
+/* ----    canvas    ---- */
+
+import { InteractionManager} from '@pixi/interaction';
+import { CanvasRenderer, canvasUtils } from '@pixi/canvas-renderer';
+import { CanvasGraphicsRenderer } from '@pixi/canvas-graphics';
+import { CanvasSpriteRenderer } from '@pixi/canvas-sprite';
+import '@pixi/canvas-display';
+
+//CanvasRenderer.registerPlugin('accessibility', accessibility.AccessibilityManager);
+CanvasRenderer.registerPlugin('graphics', CanvasGraphicsRenderer);
+CanvasRenderer.registerPlugin('interaction', InteractionManager);
+CanvasRenderer.registerPlugin('sprite', CanvasSpriteRenderer);
 
 
 // Renderer plugins

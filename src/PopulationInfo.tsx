@@ -6,8 +6,16 @@ import TimerBar from './TimerBar';
 import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import Typography from '@material-ui/core/Typography';
 
-const PopulationInfo: React.FunctionComponent<{ housed: number; unhoused: number; dead: number; onExpiry: () => void; }> = (props) => {
-    return <ExpansionPanel square className="population-info">
+const PopulationInfo: React.FunctionComponent<{ housed: number; unhoused: number; forceOpen?: boolean; showTimer: boolean; dead: number; onExpiry: () => void; }> = (props) => {
+    const [ isOpen, setIsOpen ] = React.useState(false);
+    const onChange = React.useCallback((evt, state) => {
+        setIsOpen(state);
+    }, []);
+    React.useEffect(() => {
+        if(props.forceOpen)
+            setIsOpen(true);
+    }, [ props.forceOpen ]);
+    return <ExpansionPanel square expanded={isOpen} onChange={onChange} className="population-info">
         <ExpansionPanelSummary expandIcon={<ExpandLessIcon />}>
         </ExpansionPanelSummary>
         <ExpansionPanelDetails>
@@ -16,15 +24,15 @@ const PopulationInfo: React.FunctionComponent<{ housed: number; unhoused: number
                 <p></p>
                 <ul>
                     <li style={{color: "red"}}>Deceased: {props.dead}</li>
-                    <li style={{color: "black"}}>Homeless: {props.housed}</li>
-                    <li style={{color: "green"}}>Sheltered: {props.unhoused}</li>
+                    <li style={{color: "black"}}>Homeless: {props.unhoused}</li>
+                    <li style={{color: "green"}}>Sheltered: {props.housed}</li>
                 </ul>
             </div>
-            <div className="population-column">
+            {props.showTimer && <div className="population-column">
                 <Typography variant="h5">DISASTER TIMER</Typography>
                 <p></p>
                 <TimerBar amountOfTime={1000*60*20} onExpiry={props.onExpiry}/>
-            </div>
+            </div>}
         </ExpansionPanelDetails>
     </ExpansionPanel>;
 }

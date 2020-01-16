@@ -29,14 +29,14 @@ function buildingFactory(directory: string, buildingId: number, name: string, oc
     };
 }
 const buildings: Building[] = [
-    buildingFactory('1421-1425', 5, "Penthouse apartment", 100, 2),
+    buildingFactory('5000', 3, "Heliport", 250, 2, null, "Heliports allow you to evacuate people from one area to another. This can be used to get people away from danger."),
+    buildingFactory('1421-1425', 5, "Penthouse apartment", 100, 2, undefined, "Tall apartments hold a lot of people, but they are at greater risk of collapsing under extreme conditions."),
     buildingFactory('1426-1429', 4, "Brick apartment", 100),
-    buildingFactory('1430-1433', 4, "Large house", 10),
-    buildingFactory('1434-1437', 4, "Church", 200, undefined, undefined, "description"),
+    buildingFactory('1430-1433', 4, "Large house", 10, undefined, undefined, "Private houses are weak and don't hold many people. They are not the best choice for new designs."),
+    buildingFactory('1434-1437', 4, "Church", 200, undefined, undefined, "Churches can house a lot of people effectively."),
     buildingFactory('1440-1443', 8, "Corporate office", 250),
-    buildingFactory('1458-1460', 5, "Hospital", 170),
-    buildingFactory('1487-1488', 2, "Small house", 6),
-    buildingFactory('5000', 3, "Heliport", 250, 2, null)
+    buildingFactory('1458-1460', 5, "Hospital", 170, undefined, undefined, "Hospitals can hold quite a few people and are often well-equipped to hndle disasters."),
+    buildingFactory('1487-1488', 2, "Small house", 6, undefined, undefined, "Private houses are weak and don't hold many people. They are not the best choice for new designs.")
 ];
 
 function treeFactory(directory: string): Building {

@@ -31,9 +31,11 @@ const BackIcon = iconFactory("chevron-left", "#0066ff");
 const HammerIcon = iconFactory("hammer", "#996633");
 const UnhousedPersonIcon = iconFactory("male", "#ff0000");
 const EvacuationIcon = iconFactory("helicopter", "#ff9933");
+const SkullIcon = iconFactory("skull", "#bbb");
 
 export {
     GreenSecurityIcon, BlueHouseIcon, FontAwesomeIcon, PurpleInfoIcon, RedBombIcon,
     TerraformUpIcon, TerraformDownIcon, WaterIcon, LandIcon, PauseIcon, RiskLevelButtonIcon,
-    BuildingIcon, SaveIcon, BackIcon, HammerIcon, UnhousedPersonIcon, EvacuationIcon
+    BuildingIcon, SaveIcon, BackIcon, HammerIcon, UnhousedPersonIcon, EvacuationIcon,
+    SkullIcon
 };

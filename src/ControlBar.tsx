@@ -24,6 +24,7 @@ export class ControlButton extends React.PureComponent<ControlButtonProps> {
             <IconComponent/>
         </button>;
         
+        return buttonElement;
         if(typeof title == 'string' && title.trim().length > 0)
             return <Tooltip title={title}>
                 {buttonElement}
@@ -51,4 +52,6 @@ const ControlMenu: React.FunctionComponent<{ menuIcon: any; }> = props => {
     </span>;
 };
 
-export { ControlSeparator, ControlMenu };
+const ControlGroup: React.FunctionComponent<{}> = props => <span className="control-group">{props.children}</span>;
+
+export { ControlSeparator, ControlMenu, ControlGroup };

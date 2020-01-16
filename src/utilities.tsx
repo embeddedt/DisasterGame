@@ -21,14 +21,19 @@ export function pad(n: number|string, width: number, z?: string): string {
     n = n + '';
     return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
 }
-var _debounce = function<T extends Array<any>>(ms: number, fn: (...args: T) => void): (...args: Parameters<typeof fn>) => void {
-    var timer;
-    return function() {
-      clearTimeout(timer);
-      var args = Array.prototype.slice.call(arguments);
-      args.unshift(this);
-      timer = setTimeout(fn.bind.apply(fn, args), ms);
-    };
+var _debounce = function<T extends Array<any>>(wait: number, func: (...args: T) => void, immediate = false): (...args: Parameters<typeof func>) => void {
+    var timeout;
+	return function() {
+		var context = this, args = arguments;
+		var later = function() {
+			timeout = null;
+			if (!immediate) func.apply(context, args);
+		};
+		var callNow = immediate && !timeout;
+		clearTimeout(timeout);
+		timeout = setTimeout(later, wait);
+		if (callNow) func.apply(context, args);
+	};
 };
 export { _debounce };
 
@@ -275,9 +280,10 @@ var deepDiffMapper = function () {
 
 export { deepDiffMapper };
 
-export function scheduleIdleWorkLoop(numEntries: number, cb: (i: number) => void): Promise<void> {
-    return new Promise((resolve, reject) => {
+export function scheduleIdleWorkLoop(numEntries: number, cb: (i: number) => void, timeout?: number): Promise<void> {
+    return new Promise(async(resolve, reject) => {
         var i = 0;
+        /*
         const triggerMoreWork = () => (window as any).requestIdleCallback(info => {
             try {
                 while(info.timeRemaining() > 0 && i < numEntries) {
@@ -292,8 +298,14 @@ export function scheduleIdleWorkLoop(numEntries: number, cb: (i: number) => void
             } catch(e) {
                 reject(e);
             }
-        });
+        }, { timeout: timeout });
+        
         triggerMoreWork();
+        */
+        for(var i = 0; i < numEntries; i++) {
+            cb(i);
+        }
+        resolve();
     });
 }
 
@@ -304,8 +316,10 @@ export function getRandomInt(min: number, max: number): number {
     return Math.floor(Math.random() * (max - min)) + min; //The maximum is exclusive and the minimum is inclusive
 }
 
-export function getRandomArrayMember<T>(arr: Array<T>): T {
-    return arr[getRandomInt(0, arr.length)];
+export function getRandomArrayMember<T>(arr: Array<T>, startIdx = 0): T {
+    if(startIdx >= arr.length)
+        throw new Error("Start index must be less than array length.");
+    return arr[getRandomInt(startIdx, arr.length)];
 }
 export function stringTillFirstDigit(s: string): string {
     if(s == undefined)

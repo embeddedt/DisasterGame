@@ -10,7 +10,7 @@ import ConstructionDialog from './ConstructionDialog';
 import { Buildable, Building, buildings, trees } from './Building';
 import RenderController from './RenderController';
 import * as Cull from 'pixi-cull';
-import { ControlBar, ControlButton, ControlSeparator } from './ControlBar';
+import { ControlBar, ControlButton, ControlSeparator, ControlGroup } from './ControlBar';
 import { PauseIcon, RiskLevelButtonIcon, TerraformDownIcon, TerraformUpIcon, BuildingIcon, RedBombIcon, LandIcon, WaterIcon, SaveIcon, BackIcon, PurpleInfoIcon, EvacuationIcon } from './Icons';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -23,6 +23,8 @@ import ConstructionOptionImage from './ConstructionOptionImage';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
 import shortid from 'shortid';
 import PopulationInfo from './PopulationInfo';
+import { SnackbarProvider } from 'notistack';
+import PhoneDialog from './PhoneDialog';
 
 function getTileSize() {
     const VMIN_FACTOR = (20/100);
@@ -36,6 +38,8 @@ function getWindowVmins(): number {
 const roundToNearestMultipleOf = m => n => Math.round(n/m)*m;
 
 const isNewMode = false;
+
+const EVACUATION_RANGE = 7;
 
 function buildingSprites(building: Building): string[] {
     var arr = [];
@@ -80,6 +84,7 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
     nextStateToSet: Partial<SharedTileSystemState> = null;
     previouslyChosenTile: Tile = null;
     pendingTimeouts: number[] = [];
+    _isMounted: boolean = false;
     clearFromPending(n: number) {
         const idx = this.pendingTimeouts.indexOf(n);
         if(idx != -1)
@@ -109,8 +114,8 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
         super(props);
         this.cull = null;
         this.state = {
-            hoverX: 0,
-            hoverY: 0,
+            hoverX: null,
+            hoverY: null,
             currentlyHoveredTile: null,
             currentlySelectedTile: null,
             constructionType: null,
@@ -125,7 +130,9 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
             disasterRunning: false,
             expiryDate: 0,
             forcedQueryTile: null,
-            showForcedQuery: false
+            showForcedQuery: false,
+            disasterFinished: false,
+            newspaperClosed: false
         };
         this.nextStateToSet = {};
         this.tileSystem = new _TileSystem(this);
@@ -159,7 +166,11 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
             this.props.enqueueSnackbar(`${movers} people ${isBuildingFull ? "(the maximum this building can hold) " : ""} were safely sheltered!`,
                 { variant: 'success', ref: this.checkSnackbarCompatibility });
         
-        this.state.currentlySelectedTile.ground = TileGroundType.Grass;
+        if(this.state.currentlySelectedTile.explosionOverride != null) {
+            this.state.currentlySelectedTile.ground = this.state.currentlySelectedTile.explosionOverride;
+            this.state.currentlySelectedTile.explosionOverride = null;
+        } else if(!isGroundType(this.state.currentlySelectedTile.ground, TileGroundType.Sand))
+            this.state.currentlySelectedTile.ground = TileGroundType.Grass;
         const index = this.state.currentlySelectedTile.getIndex();
         playAudio("audio/construction.mp3");
         this.onActionCompleted(this.state.currentlySelectedTile);
@@ -170,9 +181,12 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
         this.viewport.resize(this.tileSystem.app.view.clientWidth, this.tileSystem.app.view.clientHeight);
         
         this.tileSystem.app.renderer.resize(this.tileSystem.app.view.clientWidth, this.tileSystem.app.view.clientHeight);
-        
+        window.removeEventListener("resize", this.pixiSizeHandler);
         this.tileSystem.onResize().then(() => {
-            this.viewport.dirty = true;
+            if(this._isMounted) {
+                window.addEventListener("resize", this.pixiSizeHandler);
+                this.viewport.dirty = true;
+            }
         });
     }
     onTileChange(index: number) {
@@ -180,6 +194,7 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
             this.forceUpdate();
     }
     componentWillUnmount() {
+        this._isMounted = false;
         window.removeEventListener("resize", this.pixiSizeHandler);
         this.tileSystem.app.destroy(false);
         this.pendingTimeouts.forEach(n => {
@@ -230,29 +245,25 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
             return true;
         } else {
             /* Hitting the coastline */
-            if(disasterPower > 5) {
-                (t as any).oldGroundType = t.ground;
-                t.ground = TileGroundType.Water;
-                (t as any).wasFlooded = true;
-                t.dead += t.population;
-                t.population = 0;
-                if(disasterPower > 20 && t.building != null) {
-                    t.building.destroyed = true;
-                    const killed = Math.round(t.building.residents * 3 / 4);
-                    t.building.residents -= killed;
-                    t.dead += killed;
-                }
-                return true;
-            } else {
-                const killed = Math.round(t.population * 2 / 4);
+            (t as any).oldGroundType = t.ground;
+            t.ground = TileGroundType.Water;
+            (t as any).wasFlooded = true;
+            t.dead += t.population;
+            t.population = 0;
+            if(disasterPower > 20 && t.building != null) {
+                t.building.destroyed = true;
+                const killed = Math.round(t.building.residents * 3 / 4);
+                t.building.residents -= killed;
                 t.dead += killed;
-                t.population -= killed;
-                return true;
             }
+            return true;
         }
         return false;
     }
     runDisaster = () => {
+        const triggerCensus = _debounce(2000, () => {
+            this.forceUpdate();
+        }, true);
         if(this.state.disasterRunning)
             throw new Error("Disaster already running");
         this.clearSelectedTile();
@@ -307,6 +318,7 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
                             if(allWereNull)
                                 resolve(allProcessedIndexes);
                         }, (speedTiles/16)/speedReductionFactor);
+                        triggerCensus();
                     };
                     try {
                         processTile(startTile, startTile.getHighestElevation());
@@ -317,10 +329,11 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
             };
             var startTile = this.props.tileMap[this.props.tileMap.length - this.props.tileMap.rowLength];
             iterateMap(startTile, [ TileDirection.Northwest, TileDirection.Northeast ], false).then((allTiles) => {
+                this.forceUpdate();
                 const a = Array.from(allTiles);
                 iterateMap(this.props.tileMap[a[a.length - 1]], [ TileDirection.Southwest, TileDirection.Southeast ], true).then(() => {
                     this.tileSystem.interactionAllowed = false;
-                    this.setState({ constructionType: null, stickyActionInProgress: false, disasterRunning: false });
+                    this.setState({ constructionType: null, stickyActionInProgress: false, disasterRunning: false, disasterFinished: true, currentlyHoveredTile: null, currentlySelectedTile: null });
                 });
             });
         });
@@ -329,7 +342,7 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
     componentDidMount() {
         const tileMap = this.props.tileMap;
         PIXI.Application.prototype.render = null; // Disable auto-rendering by removing the function
-        this.tileSystem.app = new PIXI.Application({ view: this.canvasRef.current, transparent: true, forceCanvas: true });
+        this.tileSystem.app = new PIXI.Application({ view: this.canvasRef.current, transparent: true });
         this.tileSystem.app.view.addEventListener('contextmenu', (e) => {
             e.preventDefault();
         });
@@ -376,6 +389,7 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
         ).filter(val => val != null);
         var loadedPromise: Promise<PIXI.Loader>;
 
+        this._isMounted = true;
         this.tileSystem.loadedSprites.forEach(sprite => loader.add(sprite, sprite));
         loadedPromise = new Promise(resolve => loader.load(resolve));
 
@@ -405,7 +419,7 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
                                 let object = container.children[i];
                                 object[this.spatial] = { hashes: [] }
                                 this.updateObject(object)
-                            }).then(() => {
+                            }, 20).then(() => {
                                 container.cull = {}
                                 this.containers.push(container)
                                 container.on('childAdded', added)
@@ -427,7 +441,6 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
                 p.then(() => {
                     this.viewport.dirty = true;
                     var firstRenderCompleted = false;
-                    setTimeout(this.runDisaster, 5000);
                     this.tileSystem.app.ticker.add(() => {
                         if(Object.keys(this.nextStateToSet).length > 0) {
                             try {
@@ -449,6 +462,7 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
                             if(!firstRenderCompleted) {
                                 firstRenderCompleted = true;
                                 this.setState({ initiallyRendered: true });
+                                this.setTimeout(this.runDisaster, 5000);
                                 preloadAudio("audio/construction.mp3");
                                 preloadAudio("audio/explosion.mp3");
                                 preloadAudio("audio/ocean.mp3");
@@ -459,7 +473,7 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
             });
         });
 
-        this.pixiSizeHandler = _debounce(100, this.updatePixiSize);
+        this.pixiSizeHandler = _debounce(250, this.updatePixiSize);
         window.addEventListener("resize", this.pixiSizeHandler);
         this.updatePixiSize();
     }
@@ -540,6 +554,8 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
                         tile.population += tile.building.occupancy;
                     }
                     tile.building = null;
+                    if(isGroundType(tile.ground, TileGroundType.Sand))
+                        tile.explosionOverride = TileGroundType.Sand;
                     tile.ground = TileGroundType.Dirt1;
                     resolve();
                 });
@@ -572,6 +588,8 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
         const availableTiles = destination.searchInRing(radius).flat(2).map(n => this.props.tileMap[n]);
         /* First try and put everyone in buildings */
         for(const tile of availableTiles) {
+            if(isGroundType(tile.ground, TileGroundType.Water))
+                continue;
             if(tile.building != null) {
                 const availableSpace = Math.min(numPeople, tile.building.occupancy - tile.building.residents);
                 numPeople -= availableSpace;
@@ -581,6 +599,8 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
         /* Now spread the remaining population over all the tiles */
         const perTile = Math.floor(numPeople / availableTiles.length);
         for(const tile of availableTiles) {
+            if(isGroundType(tile.ground, TileGroundType.Water))
+                continue;
             tile.population += perTile;
             numPeople -= perTile;
             this.tileSystem.updateTile(tile.getIndex());
@@ -589,9 +609,11 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
         this.tileSystem.updateTile(destination.getIndex());
     }
     evacuateTiles(from: Tile, to: Tile) {
-        const evacuateSources = from.searchInRing(5).flat(2).map(n => this.props.tileMap[n]);
+        const evacuateSources = from.searchInRing(EVACUATION_RANGE).flat(2).map(n => this.props.tileMap[n]);
         let totalEvacuees = 0;
         for(const tile of evacuateSources) {
+            if(isGroundType(tile.ground, TileGroundType.Water))
+                continue;
             const agreeableDishoused = getRandomInt(0, tile.population+1);
             totalEvacuees += agreeableDishoused;
             tile.population -= agreeableDishoused;
@@ -600,9 +622,14 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
                 totalEvacuees += agreeableResidents;
                 tile.building.residents -= agreeableResidents;
             }
+            this.tileSystem.updateTile(tile.getIndex());
         }
-        this.housePeople(to, totalEvacuees);
-        this.props.enqueueSnackbar(totalEvacuees + " successfully evacuated!", { variant: 'success' });
+        
+        if(totalEvacuees > 0) {
+            this.housePeople(to, totalEvacuees, EVACUATION_RANGE);
+            this.props.enqueueSnackbar(totalEvacuees + " people agreed to evacuate!", { variant: 'success' });
+        } else
+            this.props.enqueueSnackbar("No one chose to evacuate.", { variant: 'error' });
     }
     checkActionAllowed(tile: Tile): string {
         if(this.state.constructionType == ConstructionType.Structures) {
@@ -648,14 +675,15 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
         } else if(this.state.constructionType == ConstructionType.Teardown && isGroundType(tile.ground, TileGroundType.Water))
             return "You can't clear water tiles.";
         else if(this.state.constructionType == ConstructionType.Evacuate) {
-            if(tile.building == null || tile.building.name != "Heliport") {
-                return "Evacuation can only be done between heliports.";
+            if(tile.building == null || (tile.building.name != "Heliport" && tile.building.name != "Hospital")) {
+                return "Evacuation can only be done between heliports and/or hospitals.";
             }
-            const tooClose = this.previouslyChosenTile == null ? false : tile.searchInRing(5).some(ring => ring.some(idx => this.props.tileMap[idx] == this.previouslyChosenTile));
+            const tooClose = this.previouslyChosenTile == null ? false : tile.searchInRing(EVACUATION_RANGE).some(ring => ring.some(idx => this.props.tileMap[idx] == this.previouslyChosenTile));
             if(tooClose) {
                 this.setSelectionHighlightVisible(this.previouslyChosenTile, false);
+                const sameTile = this.previouslyChosenTile == tile;
                 this.previouslyChosenTile = null;
-                return this.previouslyChosenTile == tile ? "It's pointless to move people where they came from." : "These heliports are too close to each other.";
+                return sameTile ? "It's pointless to move people where they came from." : "These evacuation centres are too close to each other.";
             }
             if(this.previouslyChosenTile != null) {
                 this.setSelectionHighlightVisible(this.previouslyChosenTile, false);
@@ -696,29 +724,74 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
     endQuery = () => {
         this.setState({ showForcedQuery: false });
     }
+    closeNewspaper = () => {
+        //this.setState({ newspaperClosed: true });
+    }
+    /*
     saveTileMap = () => {
         import("./TileMapSaver").then(mod => mod.saveMap(this.props.tileMap));
     };
+    */
     getTileName(tile: Tile): string {
         return tile?.building ? `${tile.building.name}${tile.building.destroyed ? " (destroyed)" : ""}` : stringTillFirstDigit(getStringEnumName(TileGroundType, tile?.ground));
+    }
+    validHover() {
+        return this.state.hoverX != null && this.state.hoverY != null;
+    }
+    getDisasterString(): JSX.Element {
+        const census = this.props.tileMap.takeCensus();
+        const success = ((census.dead)/(census.housed+census.unhoused+census.dead)) <= (1/8);
+        return <>
+            <div className="head">Vicious tsunami strikes</div>
+            <div className="content">
+                <div className="columns">
+                    <div className="column">
+                    <p>{`On ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}, ` +
+                    `a devastating tsunami struck the region. The waves inundated many coastal buildings and most remaining displaced people ` +
+                    `were killed or severely injured.`}</p>
+                    {success && <p>
+                        The city's evacuations manager did an excellent job of providing shelter for displaced people.
+                        With their help, most of the population was able to survive the tsunami.
+                        Only {census.dead} people died, compared to the {census.housed} who had been safely sheltered.
+                    </p>}
+                    {success && <p>Several other cities are now requesting to hire the evacuations manager on a contract basis.</p>}
+                    {!success && <p>
+                        Civilians were furious about the steps taken to prevent damage. "Significantly more time could
+                        have been spent evacuating low-lying areas and sheltering those without homes," one angry survivor stated.
+                    </p>}
+                    {!success && <p>The disaster's toll on the city was high, with over {census.dead} people dead.</p>}
+                    {!success && <p>
+                        Local officials are looking for  a replacement for the current evacuations manager,
+                        who has been suspended pending a full investigation.
+                    </p>}
+                    <p>Thanks for playing {document.title}! If you want to play the game again, refresh the page.</p>
+                    </div>
+                </div>
+            </div>
+        </>;
+        
     }
     render() {
         const tile = this.getCurrentOverlayTile();
         const name = this.getTileName(tile);
+        const census = this.props.tileMap.takeCensus();
         const buttons = <>
             {isNewMode && <>
                 <ControlButton icon={BackIcon} onClick={this.props.onGoBack}/>
                 <ControlButton icon={PauseIcon} onClick={this.runDisaster}/>
                 <ControlSeparator/>
-                <ControlButton icon={SaveIcon} onClick={this.saveTileMap}/>
             </>}
-            <ControlButton active={this.tileSystem.tileRiskLevelVisible} icon={RiskLevelButtonIcon} onClick={this.invertRiskLevel} title={`${this.state.tileRiskLevelVisible ? "Hide" : "Show"} tile risk level`}/>
+            <ControlGroup>
+                <ControlButton active={this.tileSystem.tileRiskLevelVisible} icon={RiskLevelButtonIcon} onClick={this.invertRiskLevel} title={`${this.state.tileRiskLevelVisible ? "Hide" : "Show"} tile risk level`}/>
+                <ControlSeparator/>
+                <DisasterControlButton title="Lower tile" sticky constructionType={ConstructionType.TerraformDown} icon={TerraformDownIcon} onClick={this.startTileBasedAction} active={this.checkActive}/>
+                <DisasterControlButton title="Raise tile" sticky constructionType={ConstructionType.TerraformUp} icon={TerraformUpIcon} onClick={this.startTileBasedAction} active={this.checkActive}/>
+            </ControlGroup>
             <ControlSeparator/>
-            <DisasterControlButton title="Lower tile" sticky constructionType={ConstructionType.TerraformDown} icon={TerraformDownIcon} onClick={this.startTileBasedAction} active={this.checkActive}/>
-            <DisasterControlButton title="Raise tile" sticky constructionType={ConstructionType.TerraformUp} icon={TerraformUpIcon} onClick={this.startTileBasedAction} active={this.checkActive}/>
-            <ControlSeparator/>
-            <DisasterControlButton title="Add building" constructionType={ConstructionType.Structures} icon={BuildingIcon} onClick={this.startTileBasedAction} active={this.checkActive}/>
-            <DisasterControlButton title="Clear tile" sticky constructionType={ConstructionType.Teardown} icon={RedBombIcon} onClick={this.startTileBasedAction} active={this.checkActive}/>
+            <ControlGroup>
+                <DisasterControlButton title="Add building" constructionType={ConstructionType.Structures} icon={BuildingIcon} onClick={this.startTileBasedAction} active={this.checkActive}/>
+                <DisasterControlButton title="Clear tile" sticky constructionType={ConstructionType.Teardown} icon={RedBombIcon} onClick={this.startTileBasedAction} active={this.checkActive}/>
+            </ControlGroup>
             <DisasterControlButton title="Query tile" sticky constructionType={ConstructionType.ShowInfo} icon={PurpleInfoIcon} onClick={this.startTileBasedAction} active={this.checkActive}/>
             <ControlSeparator/>
             <DisasterControlButton title="Trigger evacuation" sticky constructionType={ConstructionType.Evacuate} icon={EvacuationIcon} onClick={this.startTileBasedAction} active={this.checkActive}/>
@@ -729,11 +802,11 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
             </>}
         </>;
         return <>
-            {(this.state.initiallyRendered) && <ControlBar>
+            {(this.state.initiallyRendered && !this.state.disasterFinished) && <ControlBar>
                 {this.state.disasterRunning ? "A disaster is taking place!" : buttons}
             </ControlBar>}
-            <TileOverlay constructionMode={true} show={tile != null && this.state.interactionAllowed} name={name} riskLevel={tile?.riskLevel} riskColor={tile?.getRiskLevelColor()} isSelected={false}
-                residents={tile?.building?.residents} occupancy={tile?.building?.occupancy} unhoused={tile?.population}
+            <TileOverlay constructionMode={true} show={tile != null && this.state.interactionAllowed && this.validHover() && !this.isDialogBasedConstructionType(this.state.constructionType)} name={name} riskLevel={tile?.riskLevel} riskColor={tile?.getRiskLevelColor()} isSelected={false}
+                residents={tile?.building?.residents} occupancy={tile?.building?.occupancy} unhoused={tile?.population} dead={tile?.dead}
                 style={{
                     transform: `translateX(1em) translateY(-50%) translate(${this.state.hoverX}px, ${this.state.hoverY}px)`
                 }}/>
@@ -744,7 +817,7 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
             }}/>
             {!this.state.initiallyRendered && <MapLoadingScreen loadingText="Populating the area..."/>}
             <ConstructionDialog show={this.state.currentlySelectedTile != null && this.isDialogBasedConstructionType(this.state.constructionType)}
-                type={this.state.constructionType} onChooseItem={this.performBuild}
+                type={this.state.constructionType} onChooseItem={this.performBuild} targetTile={this.state.currentlySelectedTile}
                 onBuildCancel={this.onActionCompleted.bind(this, null)}/>
             <Dialog open={this.state.showError} onClose={this.onErrorAcknowledge}>
                 <DialogTitle>Action not allowed</DialogTitle>
@@ -762,14 +835,24 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
                     <TileOverlay embed constructionMode={true} show={this.state.forcedQueryTile != null} name={this.getTileName(this.state.forcedQueryTile)}
                         riskLevel={this.state.forcedQueryTile?.riskLevel} riskColor={this.state.forcedQueryTile?.getRiskLevelColor()} isSelected={false}
                         residents={this.state.forcedQueryTile?.building?.residents} occupancy={this.state.forcedQueryTile?.building?.occupancy}
-                        unhoused={this.state.forcedQueryTile?.population}/>
+                        unhoused={this.state.forcedQueryTile?.population} dead={this.state.forcedQueryTile?.dead}/>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={this.endQuery} color="primary">OK</Button>
                 </DialogActions>
             </Dialog>
-            {this.state.initiallyRendered && <PopulationInfo {...this.props.tileMap.takeCensus()} onExpiry={this.runDisaster}/>}
+            {this.state.initiallyRendered && <PopulationInfo showTimer={!this.state.disasterFinished && !this.state.disasterRunning}
+                forceOpen={this.state.disasterFinished} {...census} onExpiry={this.runDisaster}/>}
+            <PhoneDialog open={this.state.disasterFinished && !this.state.newspaperClosed} onClose={this.closeNewspaper}>
+                <DialogContent className="newspaper">
+                    {this.getDisasterString()}
+                </DialogContent>
+            </PhoneDialog>
         </>;
     }
 }
-export default withSnackbar(PIXIContainer);
+const SnackbarPixiCont = withSnackbar(PIXIContainer);
+const PixiContProvider = (props) => {
+    return <SnackbarProvider><SnackbarPixiCont {...props}>{props.children}</SnackbarPixiCont></SnackbarProvider>;
+};
+export default PixiContProvider;

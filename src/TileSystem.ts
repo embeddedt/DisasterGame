@@ -19,6 +19,7 @@ export type SharedTileSystemState = Partial<{
     hoverY: number;
     currentlyHoveredTile: Tile;
     currentlySelectedTile: Tile;
+    disasterFinished: boolean;
     constructionType: ConstructionType;
     initiallyRendered: boolean;
     willNeedToCull: boolean;
@@ -32,6 +33,7 @@ export type SharedTileSystemState = Partial<{
     expiryDate: number;
     forcedQueryTile: Tile;
     showForcedQuery: boolean;
+    newspaperClosed: boolean;
 }>;
 
 class _TileSystem {
@@ -279,7 +281,7 @@ class _TileSystem {
             this.rootObject.addChild(this.tileObjects[i]);
             this.topLevelOrderChanged = true;
         }
-        this.tileObjects[i].numPeople = Math.ceil(this.lastTileMap[i].population / 5);
+        this.tileObjects[i].numPeople = Math.ceil(this.lastTileMap[i].population);
 
         /* DRAW TILE BASE */
 
@@ -290,7 +292,8 @@ class _TileSystem {
         this.tileObjects[i].tileObject.texture = this.getTexture(this.lastTileMap[i].getGroundSprite());
         this.tileObjects[i].tileObject.texture = this.getTexture(this.lastTileMap[i].getAppropriateBaseSprite());
         this.tileObjects[i].tileSideHue = (this.getTexture(this.lastTileMap[i].getGroundSprite()).baseTexture as any).averageHue;
-
+        this.lastTileMap[i].leftColor = this.tileObjects[i].leftColor;
+        this.lastTileMap[i].rightColor = this.tileObjects[i].rightColor;
         this.tileObjects[i].tileRiskLevel.base.tint = this.lastTileMap[i].getRiskLevelColor();
         
         this.tileObjects[i].x = left_em * this.tileSize;
@@ -325,7 +328,7 @@ class _TileSystem {
             this.lastTileMap = tilemap;
             this.lastTileMap.tileSystem = this;
             this.lastRowLength = rowLength;
-            const p = scheduleIdleWorkLoop(tilemap.length, this.updateTile);
+            const p = scheduleIdleWorkLoop(tilemap.length, this.updateTile, 20);
             p.then(() => {
                 if(this.topLevelOrderChanged) {
                     this.rootObject.sortChildren();
