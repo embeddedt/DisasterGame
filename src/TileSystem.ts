@@ -34,6 +34,7 @@ export type SharedTileSystemState = Partial<{
     forcedQueryTile: Tile;
     showForcedQuery: boolean;
     newspaperClosed: boolean;
+    instructionsHidden: boolean;
 }>;
 
 class _TileSystem {

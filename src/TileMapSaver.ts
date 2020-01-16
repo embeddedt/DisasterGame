@@ -9,7 +9,6 @@ export interface StaticTileMap {
 
 export function saveMap(tileMap: TileMap): StaticTileMap {
     const s = tileMap.createStaticVersion();
-    console.log(s);
     const staticObj = { tiles: s, rowLength: tileMap.rowLength };
     const json = JSON.stringify(staticObj, null, 4);
     var blob = new Blob([json], {type: "application/json"});

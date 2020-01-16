@@ -27,12 +27,23 @@
     position: relative;
 }
 .map-loading-screen {
-    display: inline-block;
+    display: inline-flex;
+    flex-direction: column;
     text-align: center;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    background: url(sprites/welcome.jpg);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: 50% 50%;
+    width: 100%;
+    height: 100%;
 }
 
 .disaster-icon-container {
@@ -426,12 +437,30 @@
 }
 
 .population-column {
-    flex-basis: 50%;
     flex-grow: 1;
     margin: 0 auto;
     padding: 0 1em;
     white-space: nowrap;
     text-align: center;
+}
+.welcome-title {
+    display: block;
+    color: white;
+    font-size: 3rem;
+}
+
+.welcome-play-button {
+    border-radius: 50%;
+    width: 3em;
+    height: 3em;
+    color: white;
+    background-color: #0398fc;
+    font-size: 2rem;
+    border-color: #008ff0;
+}
+
+.welcome-screen {
+    
 }
 
 .selectDisable {

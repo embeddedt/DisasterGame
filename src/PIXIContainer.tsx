@@ -11,7 +11,7 @@ import { Buildable, Building, buildings, trees } from './Building';
 import RenderController from './RenderController';
 import * as Cull from 'pixi-cull';
 import { ControlBar, ControlButton, ControlSeparator, ControlGroup } from './ControlBar';
-import { PauseIcon, RiskLevelButtonIcon, TerraformDownIcon, TerraformUpIcon, BuildingIcon, RedBombIcon, LandIcon, WaterIcon, SaveIcon, BackIcon, PurpleInfoIcon, EvacuationIcon } from './Icons';
+import { PauseIcon, RiskLevelButtonIcon, TerraformDownIcon, TerraformUpIcon, BuildingIcon, RedBombIcon, LandIcon, WaterIcon, SaveIcon, BackIcon, PurpleInfoIcon, EvacuationIcon, HelpIcon } from './Icons';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -25,6 +25,7 @@ import shortid from 'shortid';
 import PopulationInfo from './PopulationInfo';
 import { SnackbarProvider } from 'notistack';
 import PhoneDialog from './PhoneDialog';
+import Typography from '@material-ui/core/Typography';
 
 function getTileSize() {
     const VMIN_FACTOR = (20/100);
@@ -41,6 +42,7 @@ const isNewMode = false;
 
 const EVACUATION_RANGE = 7;
 
+let instructionsViewedOnce = false;
 function buildingSprites(building: Building): string[] {
     var arr = [];
     arr.push(building.mainSprite);
@@ -132,7 +134,8 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
             forcedQueryTile: null,
             showForcedQuery: false,
             disasterFinished: false,
-            newspaperClosed: false
+            newspaperClosed: false,
+            instructionsHidden: instructionsViewedOnce
         };
         this.nextStateToSet = {};
         this.tileSystem = new _TileSystem(this);
@@ -462,7 +465,6 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
                             if(!firstRenderCompleted) {
                                 firstRenderCompleted = true;
                                 this.setState({ initiallyRendered: true });
-                                this.setTimeout(this.runDisaster, 5000);
                                 preloadAudio("audio/construction.mp3");
                                 preloadAudio("audio/explosion.mp3");
                                 preloadAudio("audio/ocean.mp3");
@@ -537,7 +539,6 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
                 this.tileSystem.tileObjects[tile.getIndex()].triggerExplosion().then(() => {
                     if(tile.building != null) {
                         if(tile.building.residents > 0) {
-                            console.log(tile.building.residents);
                             this.props.enqueueSnackbar(tile.building.residents + ' people just became homeless.',
                                 { variant: 'warning', ref: this.checkSnackbarCompatibility });
                         }
@@ -771,6 +772,10 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
         </>;
         
     }
+    hideInstructions = () => {
+        this.setState({ instructionsHidden: true }, () => instructionsViewedOnce = true);
+    }
+    showInstructions = () => this.setState({ instructionsHidden: false })
     render() {
         const tile = this.getCurrentOverlayTile();
         const name = this.getTileName(tile);
@@ -781,6 +786,8 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
                 <ControlButton icon={PauseIcon} onClick={this.runDisaster}/>
                 <ControlSeparator/>
             </>}
+            <ControlButton icon={HelpIcon} onClick={this.showInstructions}/>
+            <ControlSeparator/>
             <ControlGroup>
                 <ControlButton active={this.tileSystem.tileRiskLevelVisible} icon={RiskLevelButtonIcon} onClick={this.invertRiskLevel} title={`${this.state.tileRiskLevelVisible ? "Hide" : "Show"} tile risk level`}/>
                 <ControlSeparator/>
@@ -847,6 +854,67 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
                 <DialogContent className="newspaper">
                     {this.getDisasterString()}
                 </DialogContent>
+            </PhoneDialog>
+            <PhoneDialog open={this.state.initiallyRendered && !this.state.instructionsHidden} onClose={this.hideInstructions}>
+                <DialogTitle>{instructionsViewedOnce ? "Instructions" : "Welcome"}</DialogTitle>
+                <DialogContent>
+                    {!instructionsViewedOnce && <>
+                        Welcome to {document.title}!
+                        <p></p>
+                    </>}
+                    <strong>Objective</strong>
+                    <p></p>
+                    The goal of this game is to protect the residents of a city against an impending tsunami.
+                    <p></p>
+                    You have 20 minutes to evacuate dangerous areas and shelter any displaced people before
+                    the tsunami arrives.
+                    <p></p>
+                    <strong>How to play</strong>
+                    <p></p>
+                    You can drag the map around to see the whole city. You can also zoom by either pinching or using the mouse wheel,
+                    depending on your device.
+                    <p></p>
+                    Most buttons require you to choose a tile to perform an action on. Click the button, and then click the tile
+                    you would like to work with.
+                    <p></p>
+                    <strong>Construction</strong>
+                    <p></p>
+                    Construction is performed with the <BuildingIcon/> button. You'll be offered a list of buildings to choose from.
+                    <p></p>
+                    <strong>Evacuation</strong>
+                    <p></p>
+                    Evacuation can be used to quickly move a large population from a dangerous area to a safer one. Click the <EvacuationIcon/> button,
+                    then click on two different tiles. The first tile is used to determine the area to move people <i>from</i>.
+                    The second tile marks the general area people should evacuate <i>to</i>.
+                    <p></p>
+                    <strong>Querying tiles</strong>
+                    <p></p>
+                    Sometimes, you may want to find out more information about a tile. When you click the <PurpleInfoIcon/> button,
+                    you will be able to hover (in the case of a mouse) or click on a tile to see more information about it.
+                    <p></p>
+                    You'll be able to see the risk level of the tile (higher risk levels are more dangerous) as well as who and what
+                    currently resides on it.
+                    <p></p>
+                    If you want a fast way to see risky areas, clicking on the <RiskLevelButtonIcon/> button will cause the tiles to
+                    display the color of their risk level.
+                    <p></p>
+                    <strong>Global statistics</strong>
+                    <p></p>
+                    The panel at the bottom of the screen can be opened to see general statistics about the whole population as well as
+                    how much time is left before the disaster.
+                    <p></p>
+                    <strong>The disaster</strong>
+                    <p></p>
+                    After 20 minutes, the tsunami will arrive. While the disaster is taking place, you will be able to query tiles and look
+                    at the global statistics panel, but you cannot evacuate anyone or build more buildings.
+                    <p></p>
+                    To win the game, you must successfully keep 7/8 of the population from dying.
+                    <p></p>
+                    Good luck! If you want to refer to these instructions later, you can click on the <HelpIcon/> button.
+                </DialogContent>
+                <DialogActions>
+                    <Button color="primary" onClick={this.hideInstructions}>{instructionsViewedOnce ? "OK" : "Start"}</Button>
+                </DialogActions>
             </PhoneDialog>
         </>;
     }

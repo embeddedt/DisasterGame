@@ -51,7 +51,6 @@ export async function createTsunamiMap(): Promise<TileMap> {
     await scheduleIdleWorkLoop(64*32, () => {
         arr.push(tileStream.next().value);
     }, 16);
-    console.log(arr);
     const testTileMap: TileMap = new TileMap(arr, 64);
     await scheduleIdleWorkLoop(64*32, (i) => {
         const tile = testTileMap[i];

@@ -11,7 +11,6 @@ import MapLoadingScreen from './MapLoadingScreen';
 import { createTsunamiMap } from './Tsunami';
 import AlwaysSuspended from './AlwaysSuspended';
 import { isWebGLSupported } from '@pixi/utils';
-import { StylesProvider, createGenerateClassName } from '@material-ui/core/styles';
 
 const PIXIContainer = React.lazy(() => {
     try {
@@ -22,9 +21,16 @@ const PIXIContainer = React.lazy(() => {
 });
 
 const WebGLDialog = React.lazy(() => import("./WebGLDialog"));
-const MapChooser = React.lazy(() => import("./MapChooser"));
 
 var windowPromise = new Promise(resolve => window.addEventListener("load", resolve));
+
+const WelcomeScreen = (props) => {
+    return <div className="map-loading-screen welcome-screen">
+        <span className="welcome-title">{document.title}</span>
+        <p></p>
+        <button onClick={props.onClick} className="welcome-play-button"><i className="fas fa-play"/></button>
+    </div>
+};
 windowPromise.then(async function() {
     const webGLSupport: boolean = isWebGLSupported();
     const tilemaps: TileMapInfo[] = [
@@ -40,7 +46,7 @@ windowPromise.then(async function() {
         const [ chosenMap, setChosenMap ] = React.useState<TileMap>(null);
         const [ generatingMap, setGeneratingMap ] = React.useState(false);
         const [ glAcknowledge, setGLAcknowledge ] = React.useState(webGLSupport);
-        const [ canvasLoaded, setCanvasLoaded ] = React.useState(true);
+        const canvasLoaded = true;
         const onMapChosen = React.useCallback((mapGen: () => Promise<TileMap>) => {
             setGeneratingMap(true);
             const p = mapGen();
@@ -54,26 +60,20 @@ windowPromise.then(async function() {
             });
         }, []);
         
-        React.useEffect(() => {
-            if(canvasLoaded == true)
-                setChosenMap(testmap);
-        }, [ canvasLoaded ]);
-        
         const goBack = React.useCallback(() => setChosenMap(null), []);
+        const onWelcomeClick = React.useCallback(() => setChosenMap(testmap), []);
         const onGlAcknowledge = React.useCallback(() => {
             /* Load PIXI Canvas support */
             setGLAcknowledge(true);
         }, [ ]);
         const renderSystemOK = webGLSupport || (glAcknowledge && canvasLoaded);
         return <div className="canvas-container">
-            <StylesProvider>
-                <Suspense fallback={<MapLoadingScreen loadingText={(generatingMap || chosenMap != null) ? "Generating map..." : "Loading..."}/>}>
-                    {renderSystemOK && <MapChooser show={chosenMap == null} onMapChosen={onMapChosen} availableMaps={tilemaps}/>}
-                    {(generatingMap || (glAcknowledge && !canvasLoaded)) && <AlwaysSuspended/>}
-                    {(renderSystemOK && chosenMap != null) && <PIXIContainer onGoBack={goBack} tileMap={chosenMap}/>}
-                    {!webGLSupport && <WebGLDialog glAcknowledged={glAcknowledge} onClose={onGlAcknowledge}/>}
-                </Suspense>
-            </StylesProvider>
+            <Suspense fallback={<MapLoadingScreen loadingText={(generatingMap || chosenMap != null) ? "Generating map..." : "Loading..."}/>}>
+                {(renderSystemOK && chosenMap == null) && <WelcomeScreen onClick={onWelcomeClick}/>}
+                {(generatingMap || (glAcknowledge && !canvasLoaded)) && <AlwaysSuspended/>}
+                {(renderSystemOK && chosenMap != null) && <PIXIContainer onGoBack={goBack} tileMap={chosenMap}/>}
+                {!webGLSupport && <WebGLDialog glAcknowledged={glAcknowledge} onClose={onGlAcknowledge}/>}
+            </Suspense>
         </div>;
     }
     

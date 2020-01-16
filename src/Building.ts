@@ -29,7 +29,7 @@ function buildingFactory(directory: string, buildingId: number, name: string, oc
     };
 }
 const buildings: Building[] = [
-    buildingFactory('5000', 3, "Heliport", 250, 2, null, "Heliports allow you to evacuate people from one area to another. This can be used to get people away from danger."),
+    buildingFactory('5000', 3, "Heliport", 50, 2, null, "Heliports allow you to evacuate people from one area to another. This can be used to get people away from danger."),
     buildingFactory('1421-1425', 5, "Penthouse apartment", 100, 2, undefined, "Tall apartments hold a lot of people, but they are at greater risk of collapsing under extreme conditions."),
     buildingFactory('1426-1429', 4, "Brick apartment", 100),
     buildingFactory('1430-1433', 4, "Large house", 10, undefined, undefined, "Private houses are weak and don't hold many people. They are not the best choice for new designs."),

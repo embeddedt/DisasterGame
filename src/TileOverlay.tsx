@@ -55,7 +55,7 @@ const TileOverlay = React.forwardRef<HTMLDivElement, TileOverlayProps>((props, r
         <div className="tile-info-container">
             {props.name}
             <p></p>
-            <span className="icon-information"><span><FontAwesomeIcon type="exclamation-triangle" color="#fccf03"/>&nbsp;{"100%"}</span>&nbsp;<span><UnhousedPersonIcon/>&nbsp;{props.unhoused}</span>{residencyComponent}{deadComponent}</span>
+            <span className="icon-information"><span><UnhousedPersonIcon/>&nbsp;{props.unhoused}</span>{residencyComponent}{deadComponent}</span>
         </div>
     </div>;
     /*</div>
