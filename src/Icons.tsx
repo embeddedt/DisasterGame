@@ -18,7 +18,7 @@ function imageIconFactory(src: string) {
 const GreenSecurityIcon = iconFactory("shield-alt", "#3bcc62");
 const BlueHouseIcon = iconFactory("home", "#3d94ff");
 const PurpleInfoIcon = iconFactory("info-circle", "#b65bfc");
-const RedBombIcon = iconFactory("bomb", "#cc2900");
+const RedBombIcon = iconFactory("bomb", "#777");
 const TerraformUpIcon = iconFactory("arrow-up", "#009933");
 const TerraformDownIcon = iconFactory("arrow-down", "#009933");
 const WaterIcon = iconFactory("water", "#00ccff");
@@ -33,10 +33,11 @@ const UnhousedPersonIcon = iconFactory("male", "#ff0000");
 const EvacuationIcon = iconFactory("helicopter", "#ff9933");
 const SkullIcon = iconFactory("skull", "#bbb");
 const HelpIcon = iconFactory("question", "#0099ff");
+const StartDisasterIcon = iconFactory("exclamation-triangle", "#cc2900");
 
 export {
     GreenSecurityIcon, BlueHouseIcon, FontAwesomeIcon, PurpleInfoIcon, RedBombIcon,
     TerraformUpIcon, TerraformDownIcon, WaterIcon, LandIcon, PauseIcon, RiskLevelButtonIcon,
     BuildingIcon, SaveIcon, BackIcon, HammerIcon, UnhousedPersonIcon, EvacuationIcon,
-    SkullIcon, HelpIcon
+    SkullIcon, HelpIcon, StartDisasterIcon
 };

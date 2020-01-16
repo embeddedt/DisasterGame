@@ -28,11 +28,6 @@ const PopulationInfo: React.FunctionComponent<{ housed: number; unhoused: number
                     <li style={{color: "green"}}>Sheltered: {props.housed}</li>
                 </ul>
             </div>
-            {props.showTimer && <div className="population-column">
-                <Typography variant="h5">DISASTER TIMER</Typography>
-                <p></p>
-                <TimerBar amountOfTime={1000*60*20} onExpiry={props.onExpiry}/>
-            </div>}
         </ExpansionPanelDetails>
     </ExpansionPanel>;
 }

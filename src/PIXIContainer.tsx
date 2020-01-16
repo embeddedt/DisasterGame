@@ -11,7 +11,7 @@ import { Buildable, Building, buildings, trees } from './Building';
 import RenderController from './RenderController';
 import * as Cull from 'pixi-cull';
 import { ControlBar, ControlButton, ControlSeparator, ControlGroup } from './ControlBar';
-import { PauseIcon, RiskLevelButtonIcon, TerraformDownIcon, TerraformUpIcon, BuildingIcon, RedBombIcon, LandIcon, WaterIcon, SaveIcon, BackIcon, PurpleInfoIcon, EvacuationIcon, HelpIcon } from './Icons';
+import { PauseIcon, RiskLevelButtonIcon, TerraformDownIcon, TerraformUpIcon, BuildingIcon, RedBombIcon, LandIcon, WaterIcon, SaveIcon, BackIcon, PurpleInfoIcon, EvacuationIcon, HelpIcon, StartDisasterIcon } from './Icons';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -760,7 +760,7 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
                         Civilians were furious about the steps taken to prevent damage. "Significantly more time could
                         have been spent evacuating low-lying areas and sheltering those without homes," one angry survivor stated.
                     </p>}
-                    {!success && <p>The disaster's toll on the city was high, with over {census.dead} people dead.</p>}
+                    {!success && <p>The disaster's toll on the city was high, with {census.dead} people dead.</p>}
                     {!success && <p>
                         Local officials are looking for  a replacement for the current evacuations manager,
                         who has been suspended pending a full investigation.
@@ -807,10 +807,12 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
                 <DisasterControlButton sticky title="Make water" constructionType={ConstructionType.ChangeGroundType} flag={TileGroundType.Water} icon={WaterIcon} onClick={this.startTileBasedAction} active={this.checkActive}/>
                 <DisasterControlButton sticky title="Make grass" constructionType={ConstructionType.ChangeGroundType} flag={TileGroundType.Grass} icon={LandIcon} onClick={this.startTileBasedAction} active={this.checkActive}/>
             </>}
+            <ControlSeparator/>
+            <ControlButton icon={StartDisasterIcon} onClick={this.runDisaster}/>
         </>;
         return <>
             {(this.state.initiallyRendered && !this.state.disasterFinished) && <ControlBar>
-                {this.state.disasterRunning ? "A disaster is taking place!" : buttons}
+                {this.state.disasterRunning ? <span style={{lineHeight: "1.5"}}>A disaster is taking place!</span> : buttons}
             </ControlBar>}
             <TileOverlay constructionMode={true} show={tile != null && this.state.interactionAllowed && this.validHover() && !this.isDialogBasedConstructionType(this.state.constructionType)} name={name} riskLevel={tile?.riskLevel} riskColor={tile?.getRiskLevelColor()} isSelected={false}
                 residents={tile?.building?.residents} occupancy={tile?.building?.occupancy} unhoused={tile?.population} dead={tile?.dead}
