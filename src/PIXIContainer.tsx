@@ -808,7 +808,7 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
                 <DisasterControlButton sticky title="Make grass" constructionType={ConstructionType.ChangeGroundType} flag={TileGroundType.Grass} icon={LandIcon} onClick={this.startTileBasedAction} active={this.checkActive}/>
             </>}
             <ControlSeparator/>
-            <ControlButton icon={StartDisasterIcon} onClick={this.runDisaster}/>
+            <ControlButton title="Start disaster" icon={StartDisasterIcon} onClick={this.runDisaster}/>
         </>;
         return <>
             {(this.state.initiallyRendered && !this.state.disasterFinished) && <ControlBar>
@@ -868,8 +868,7 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
                     <p></p>
                     The goal of this game is to protect the residents of a city against an impending tsunami.
                     <p></p>
-                    You have 20 minutes to evacuate dangerous areas and shelter any displaced people before
-                    the tsunami arrives.
+                    You need to evacuate dangerous areas and shelter any displaced people.
                     <p></p>
                     <strong>How to play</strong>
                     <p></p>
@@ -907,7 +906,9 @@ class PIXIContainer extends React.PureComponent<{ tileMap: TileMap; onGoBack: ()
                     <p></p>
                     <strong>The disaster</strong>
                     <p></p>
-                    After 20 minutes, the tsunami will arrive. While the disaster is taking place, you will be able to query tiles and look
+                    When you feel that your work is finished, click the <StartDisasterIcon/> button. The tsunami will then arrive.
+                    <p></p>
+                    While the disaster is taking place, you will be able to query tiles and look
                     at the global statistics panel, but you cannot evacuate anyone or build more buildings.
                     <p></p>
                     To win the game, you must successfully keep 7/8 of the population from dying.
