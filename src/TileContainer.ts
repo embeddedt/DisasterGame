@@ -125,7 +125,7 @@ export default class TileContainer extends PIXI.Container {
         if(typeof this.tileLeftObject == 'object') {
             this.tileLeftObject.cacheAsBitmap = false;
             this.tileLeftObject.clear();
-            const color = HSVtoRGB(this.tileSideHue / 360, 68.6 / 100, 35 / 100);
+            const color = HSVtoRGB(this.tileSideHue / 360, 67.9 / 100, 28 / 100);
             this.leftColor = rgbToHexNum(color);
             this.tileLeftObject.beginFill(this.leftColor);
             const leftXCoordinates = [ left_em * this.tileSize, this.tileSize * (left_em+0.5), this.tileSize * (left_em+0.5), left_em * this.tileSize];
@@ -166,7 +166,7 @@ export default class TileContainer extends PIXI.Container {
         if(typeof this.tileRightObject == 'object') {
             this.tileRightObject.cacheAsBitmap = true;
             this.tileRightObject.clear();
-            const color = HSVtoRGB(this.tileSideHue / 360, 67.9 / 100, 28 / 100);
+            const color = HSVtoRGB(this.tileSideHue / 360, 68.6 / 100, 35 / 100);
             this.rightColor = rgbToHexNum(color);
             this.tileRightObject.beginFill(this.rightColor);
             const rightXCoordinates = [ (left_em+1) * this.tileSize, this.tileSize * (left_em+0.5), this.tileSize * (left_em+0.5), this.tileSize * (left_em+1) ];

@@ -47,30 +47,38 @@ export function playAudio(source: string, onPlayStart?: () => void, stopIfInterr
     }
     const onError = (e) => {
         console.error("Couldn't play audio: ", e);
+/*
         if(typeof onPlayStart == 'function')
             onPlayStart();
+*/
     };
     try {
         const a = new Audio(source);
         currentAudio = a;
         lastSoundShouldStop = stopIfInterrupted;
+/*
         a.addEventListener("canplaythrough", () => {
             if(currentAudio == a) {
                 try {
                     a.play();
                 } catch(e) {
                     onError(e);
+                    return;
                 }
             }
             if(typeof onPlayStart == 'function')
                 onPlayStart();
         });
+*/
         a.addEventListener("error", (e) => {
             onError(e);
         });
-        
+        a.play();
+        if(typeof onPlayStart == 'function')
+            onPlayStart();
     } catch(e) {
-        
+        if(typeof onPlayStart == 'function')
+            onPlayStart();
     }
 }
 
